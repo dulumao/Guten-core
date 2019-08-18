@@ -46,15 +46,15 @@ func (m *Model) Transaction(f TransactionFunc) (error, error) {
 }
 
 func (m Model) Wheres(f Func, wheres ...Where) error {
-	var query = m.DB()
+	var db = m.DB()
 
 	if len(wheres) > 0 {
 		for _, scope := range wheres {
-			query = query.Scopes(scope)
+			db = db.Scopes(scope)
 		}
 	}
 
-	m.db = query
+	m.db = db
 
 	if err := f(&m); err != nil {
 		return err
