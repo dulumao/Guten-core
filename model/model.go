@@ -1,19 +1,20 @@
 package model
 
 import (
+	"github.com/dulumao/Guten-core/database"
 	"github.com/dulumao/Guten-utils/paginater"
 	"github.com/jinzhu/gorm"
-	"github.com/dulumao/Guten-core/database"
 )
 
 type Model struct {
 	db *gorm.DB
 }
 
-type TransactionFunc func(m *Model) error
 type Func func(m *Model) error
+type TransactionFunc Func
 type NotFoundCallback func(m *Model)
-type Where []func(db *gorm.DB) *gorm.DB
+type Where func(db *gorm.DB) *gorm.DB
+type Wheres []Where
 
 func (m *Model) DB() *gorm.DB {
 	if m.db == nil {
@@ -44,6 +45,24 @@ func (m *Model) Transaction(f TransactionFunc) (error, error) {
 	return mTx.DB().Commit().Error, nil
 }
 
+func (m Model) Wheres(f Func, wheres ...Where) error {
+	var query = m.DB()
+
+	if len(wheres) > 0 {
+		for _, scope := range wheres {
+			query = query.Scopes(scope)
+		}
+	}
+
+	m.db = query
+
+	if err := f(&m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Model) IsNotFound(f Func, callbacks ...NotFoundCallback) bool {
 	if err := f(m); err != nil {
 		if gorm.IsRecordNotFoundError(err) {
@@ -69,7 +88,7 @@ func (m *Model) Save(value interface{}) error {
 }
 
 func (m *Model) Exists(model interface{}, id interface{}, fields ...string) bool {
-	var wheres Where
+	var wheres Wheres
 	var itemCount = 0
 	var field = "id"
 
@@ -100,7 +119,7 @@ func (m *Model) Find(model interface{}, id interface{}, fields ...string) error 
 	return nil
 }
 
-func (m *Model) Get(model interface{}, wheres ...Where) error {
+func (m *Model) Get(model interface{}, wheres ...Wheres) error {
 	var query = m.DB().Model(model)
 
 	if len(wheres) > 0 {
@@ -156,7 +175,7 @@ func (m *Model) Delete(model interface{}, where ...interface{}) error {
 	return m.DB().Delete(model, where...).Error
 }
 
-func (m *Model) Count(model interface{}, wheres ...Where) int {
+func (m *Model) Count(model interface{}, wheres ...Wheres) int {
 	var count int
 	var query = m.DB().Model(model)
 
@@ -171,10 +190,10 @@ func (m *Model) Count(model interface{}, wheres ...Where) int {
 	return count
 }
 
-func (m *Model) Paginate(model interface{}, page, pageCount, numPages int, wheres ...Where) (*paginater.Paginater, error) {
+func (m *Model) Paginate(model interface{}, page, pageCount, numPages int, wheres ...Wheres) (*paginater.Paginater, error) {
 	var total = m.Count(model, wheres ...)
 
-	var _wheres Where
+	var _wheres Wheres
 
 	if len(wheres) > 0 {
 		_wheres = append(_wheres, wheres[0]...)
