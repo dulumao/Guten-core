@@ -159,7 +159,7 @@ func (m *Model) Get(model interface{}, wheres ...Wheres) error {
 }
 
 func (m *Model) First(model interface{}, withTrasheds ...bool) error {
-	var db = m.DB()
+	var db = m.DB().Model(model)
 
 	if len(withTrasheds) > 0 && withTrasheds[0] {
 		db = db.Unscoped()
@@ -189,7 +189,7 @@ func (m *Model) FirstWhere(model interface{}, wheres ...Wheres) error {
 }
 
 func (m *Model) FirstForUpdate(model interface{}, withTrasheds ...bool) error {
-	var db = m.DB().Set("gorm:query_option", "FOR UPDATE")
+	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model)
 
 	if len(withTrasheds) > 0 && withTrasheds[0] {
 		db = db.Unscoped()
