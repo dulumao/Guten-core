@@ -63,6 +63,24 @@ func (m Model) Wheres(f Func, wheres ...Where) error {
 	return nil
 }
 
+func (m Model) Sets(f Func, kv ...map[string]interface{}) error {
+	var db = m.DB()
+
+	if len(kv) > 0 {
+		for k, v := range kv[0] {
+			db = db.Set(k, v)
+		}
+	}
+
+	m.db = db
+
+	if err := f(&m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Model) IsNotFound(f Func, callbacks ...NotFoundCallback) bool {
 	if err := f(m); err != nil {
 		if gorm.IsRecordNotFoundError(err) {
@@ -119,6 +137,11 @@ func (m *Model) Find(model interface{}, id interface{}, fields ...string) error 
 	return nil
 }
 
+// alias Get
+func (m *Model) FindWhere(model interface{}, wheres ...Wheres) error {
+	return m.Get(model, wheres...)
+}
+
 func (m *Model) Get(model interface{}, wheres ...Wheres) error {
 	var query = m.DB().Model(model)
 
@@ -143,6 +166,22 @@ func (m *Model) First(model interface{}, withTrasheds ...bool) error {
 	}
 
 	if err := db.First(model).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Model) FirstWhere(model interface{}, wheres ...Wheres) error {
+	var query = m.DB().Model(model)
+
+	if len(wheres) > 0 {
+		for _, scope := range wheres[0] {
+			query = query.Scopes(scope)
+		}
+	}
+
+	if err := query.First(model).Error; err != nil {
 		return err
 	}
 
