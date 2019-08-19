@@ -13,8 +13,8 @@ type Model struct {
 type Func func(m *Model) error
 type TransactionFunc Func
 type NotFoundCallback func(m *Model)
-type Where func(db *gorm.DB) *gorm.DB
-type Wheres []Where
+type Scope func(db *gorm.DB) *gorm.DB
+type Scopes []Scope
 
 func (m *Model) DB() *gorm.DB {
 	if m.db == nil {
@@ -45,11 +45,11 @@ func (m *Model) Transaction(f TransactionFunc) (error, error) {
 	return mTx.DB().Commit().Error, nil
 }
 
-func (m Model) Wheres(f Func, wheres ...Where) error {
+func (m Model) Wheres(f Func, scopes ...Scope) error {
 	var db = m.DB()
 
-	if len(wheres) > 0 {
-		for _, scope := range wheres {
+	if len(scopes) > 0 {
+		for _, scope := range scopes {
 			db = db.Scopes(scope)
 		}
 	}
@@ -106,7 +106,7 @@ func (m *Model) Save(value interface{}) error {
 }
 
 func (m *Model) Exists(model interface{}, id interface{}, fields ...string) bool {
-	var wheres Wheres
+	var scopes Scopes
 	var itemCount = 0
 	var field = "id"
 
@@ -114,11 +114,11 @@ func (m *Model) Exists(model interface{}, id interface{}, fields ...string) bool
 		field = fields[0]
 	}
 
-	wheres = append(wheres, func(db *gorm.DB) *gorm.DB {
+	scopes = append(scopes, func(db *gorm.DB) *gorm.DB {
 		return db.Where("`?` = ?", gorm.Expr(field), id)
 	})
 
-	itemCount = m.Count(model, wheres)
+	itemCount = m.Count(model, scopes)
 
 	return itemCount > 0
 }
@@ -138,15 +138,15 @@ func (m *Model) Find(model interface{}, id interface{}, fields ...string) error 
 }
 
 // alias Get
-func (m *Model) FindWhere(model interface{}, wheres ...Wheres) error {
-	return m.Get(model, wheres...)
+func (m *Model) FindScopes(model interface{}, scopes ...Scopes) error {
+	return m.Get(model, scopes...)
 }
 
-func (m *Model) Get(model interface{}, wheres ...Wheres) error {
+func (m *Model) Get(model interface{}, scopes ...Scopes) error {
 	var query = m.DB().Model(model)
 
-	if len(wheres) > 0 {
-		for _, scope := range wheres[0] {
+	if len(scopes) > 0 {
+		for _, scope := range scopes[0] {
 			query = query.Scopes(scope)
 		}
 	}
@@ -158,25 +158,31 @@ func (m *Model) Get(model interface{}, wheres ...Wheres) error {
 	return nil
 }
 
-func (m *Model) First(model interface{}, withTrasheds ...bool) error {
+func (m *Model) First(model interface{}, where ...interface{}) error {
 	var db = m.DB().Model(model)
 
-	if len(withTrasheds) > 0 && withTrasheds[0] {
-		db = db.Unscoped()
-	}
-
-	if err := db.First(model).Error; err != nil {
+	if err := db.First(model, where).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Model) FirstWhere(model interface{}, wheres ...Wheres) error {
+func (m *Model) FirstWithTrashed(model interface{}, where ...interface{}) error {
+	var db = m.DB().Model(model).Unscoped()
+
+	if err := db.First(model, where).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Model) FirstScopes(model interface{}, scopes ...Scopes) error {
 	var query = m.DB().Model(model)
 
-	if len(wheres) > 0 {
-		for _, scope := range wheres[0] {
+	if len(scopes) > 0 {
+		for _, scope := range scopes[0] {
 			query = query.Scopes(scope)
 		}
 	}
@@ -188,14 +194,20 @@ func (m *Model) FirstWhere(model interface{}, wheres ...Wheres) error {
 	return nil
 }
 
-func (m *Model) FirstForUpdate(model interface{}, withTrasheds ...bool) error {
-	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model)
+func (m *Model) FirstWithTrashedForUpdate(model interface{}, where ...interface{}) error {
+	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model).Unscoped()
 
-	if len(withTrasheds) > 0 && withTrasheds[0] {
-		db = db.Unscoped()
+	if err := db.First(model, where).Error; err != nil {
+		return err
 	}
 
-	if err := db.First(model).Error; err != nil {
+	return nil
+}
+
+func (m *Model) FirstForUpdate(model interface{}, where ...interface{}) error {
+	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model)
+
+	if err := db.First(model, where).Error; err != nil {
 		return err
 	}
 
@@ -211,15 +223,15 @@ func (m *Model) Updates(model interface{}, attrs interface{}, ignoreProtectedAtt
 }
 
 func (m *Model) Delete(model interface{}, where ...interface{}) error {
-	return m.DB().Delete(model, where...).Error
+	return m.DB().Model(model).Delete(model, where...).Error
 }
 
-func (m *Model) Count(model interface{}, wheres ...Wheres) int {
+func (m *Model) Count(model interface{}, scopes ...Scopes) int {
 	var count int
 	var query = m.DB().Model(model)
 
-	if len(wheres) > 0 {
-		for _, scope := range wheres[0] {
+	if len(scopes) > 0 {
+		for _, scope := range scopes[0] {
 			query = query.Scopes(scope)
 		}
 	}
@@ -229,20 +241,20 @@ func (m *Model) Count(model interface{}, wheres ...Wheres) int {
 	return count
 }
 
-func (m *Model) Paginate(model interface{}, page, pageCount, numPages int, wheres ...Wheres) (*paginater.Paginater, error) {
-	var total = m.Count(model, wheres ...)
+func (m *Model) Paginate(model interface{}, page, pageCount, numPages int, scopes ...Scopes) (*paginater.Paginater, error) {
+	var total = m.Count(model, scopes ...)
 
-	var _wheres Wheres
+	var _scopes Scopes
 
-	if len(wheres) > 0 {
-		_wheres = append(_wheres, wheres[0]...)
+	if len(scopes) > 0 {
+		_scopes = append(_scopes, scopes[0]...)
 	}
 
-	_wheres = append(_wheres, func(db *gorm.DB) *gorm.DB {
+	_scopes = append(_scopes, func(db *gorm.DB) *gorm.DB {
 		return db.Offset(pageCount * (page - 1)).Limit(pageCount)
 	})
 
-	if err := m.Get(model, _wheres); err != nil {
+	if err := m.Get(model, _scopes); err != nil {
 		return nil, err
 	}
 
