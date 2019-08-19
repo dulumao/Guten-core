@@ -123,19 +123,35 @@ func (m *Model) Exists(model interface{}, id interface{}, fields ...string) bool
 	return itemCount > 0
 }
 
-func (m *Model) Find(model interface{}, id interface{}, fields ...string) error {
-	var field = "id"
-
-	if len(fields) > 0 {
-		field = fields[0]
-	}
-
-	if err := m.DB().Where("`?` = ?", gorm.Expr(field), id).Find(model).Error; err != nil {
+func (m *Model) Find(model interface{}, where ...interface{}) error {
+	if err := m.DB().Find(model, where...).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
+
+func (m *Model) FindWithUnscoped(model interface{}, where ...interface{}) error {
+	if err := m.DB().Unscoped().Find(model, where...).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// func (m *Model) Find(model interface{}, id interface{}, fields ...string) error {
+// 	var field = "id"
+//
+// 	if len(fields) > 0 {
+// 		field = fields[0]
+// 	}
+//
+// 	if err := m.DB().Where("`?` = ?", gorm.Expr(field), id).Find(model).Error; err != nil {
+// 		return err
+// 	}
+//
+// 	return nil
+// }
 
 // alias Get
 func (m *Model) FindScopes(model interface{}, scopes ...Scopes) error {
@@ -168,7 +184,7 @@ func (m *Model) First(model interface{}, where ...interface{}) error {
 	return nil
 }
 
-func (m *Model) FirstWithTrashed(model interface{}, where ...interface{}) error {
+func (m *Model) FirstWithUnscoped(model interface{}, where ...interface{}) error {
 	var db = m.DB().Model(model).Unscoped()
 
 	if err := db.First(model, where...).Error; err != nil {
@@ -194,7 +210,7 @@ func (m *Model) FirstScopes(model interface{}, scopes ...Scopes) error {
 	return nil
 }
 
-func (m *Model) FirstWithTrashedForUpdate(model interface{}, where ...interface{}) error {
+func (m *Model) FirstWithUnscopedForUpdate(model interface{}, where ...interface{}) error {
 	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model).Unscoped()
 
 	if err := db.First(model, where...).Error; err != nil {
