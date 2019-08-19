@@ -161,7 +161,7 @@ func (m *Model) Get(model interface{}, scopes ...Scopes) error {
 func (m *Model) First(model interface{}, where ...interface{}) error {
 	var db = m.DB().Model(model)
 
-	if err := db.First(model, where).Error; err != nil {
+	if err := db.First(model, where...).Error; err != nil {
 		return err
 	}
 
@@ -171,7 +171,7 @@ func (m *Model) First(model interface{}, where ...interface{}) error {
 func (m *Model) FirstWithTrashed(model interface{}, where ...interface{}) error {
 	var db = m.DB().Model(model).Unscoped()
 
-	if err := db.First(model, where).Error; err != nil {
+	if err := db.First(model, where...).Error; err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (m *Model) FirstScopes(model interface{}, scopes ...Scopes) error {
 func (m *Model) FirstWithTrashedForUpdate(model interface{}, where ...interface{}) error {
 	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model).Unscoped()
 
-	if err := db.First(model, where).Error; err != nil {
+	if err := db.First(model, where...).Error; err != nil {
 		return err
 	}
 
@@ -207,7 +207,7 @@ func (m *Model) FirstWithTrashedForUpdate(model interface{}, where ...interface{
 func (m *Model) FirstForUpdate(model interface{}, where ...interface{}) error {
 	var db = m.DB().Set("gorm:query_option", "FOR UPDATE").Model(model)
 
-	if err := db.First(model, where).Error; err != nil {
+	if err := db.First(model, where...).Error; err != nil {
 		return err
 	}
 
