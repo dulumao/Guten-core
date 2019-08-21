@@ -45,7 +45,7 @@ func (m *Model) Transaction(f TransactionFunc) (error, error) {
 	return mTx.DB().Commit().Error, nil
 }
 
-func (m Model) Wheres(f Func, scopes ...Scope) error {
+func (m Model) Scopes(f Func, scopes ...Scope) error {
 	var db = m.DB()
 
 	if len(scopes) > 0 {
@@ -230,6 +230,8 @@ func (m *Model) FirstForUpdate(model interface{}, where ...interface{}) error {
 	return nil
 }
 
+// 激活0值保存，默认struct保存会忽略0值
+// model.M().Updates(&model, structs.Map(form))
 func (m *Model) Update(model interface{}, attrs ...interface{}) error {
 	return m.DB().Model(model).Update(attrs...).Error
 }

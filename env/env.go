@@ -13,6 +13,7 @@ type tomlConfig struct {
 	Session  session
 	Database database
 	Cache    cache
+	Queue    queue
 }
 
 type view struct {
@@ -101,6 +102,14 @@ type cache struct {
 
 	Memcache struct {
 		Addr string `toml:"addr"`
+	}
+}
+
+type queue struct {
+	Redis struct {
+		Addr     string `toml:"addr"`
+		DbNumber int    `toml:"db_number"`
+		Password string `toml:"password"`
 	}
 }
 

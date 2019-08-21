@@ -1,7 +1,6 @@
 package module
 
 import (
-	"github.com/labstack/echo"
 	"plugin"
 	"reflect"
 )
@@ -23,7 +22,6 @@ type Module struct {
 	Func map[string]interface{}
 	// ViewFunc      template.FuncMap
 	Apidoc        map[string]interface{}
-	Configuration map[string]func(echo.Context) error
 	Install       map[string]func(string)
 	Update        map[string]func(string)
 	Uninstall     map[string]func(string)
@@ -36,7 +34,6 @@ func New() {
 		Func: make(map[string]interface{}),
 		// ViewFunc:      make(template.FuncMap),
 		Apidoc:        make(map[string]interface{}),
-		Configuration: make(map[string]func(echo.Context) error),
 		Install:       make(map[string]func(string)),
 		Update:        make(map[string]func(string)),
 		Uninstall:     make(map[string]func(string)),
@@ -53,10 +50,6 @@ func (self *Module) AddViewFunc(name string, v interface{}) {
 
 func (self *Module) AddApiHandler(name string, v interface{}) {
 	self.Apidoc[name] = v
-}
-
-func (self *Module) AddConfiguration(name string, v func(echo.Context) error) {
-	self.Configuration[name] = v
 }
 
 func LoadModule(path string) (IModule, Info) {
