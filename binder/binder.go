@@ -66,6 +66,7 @@ func (b *DefaultBinder) Bind(i interface{}, c *rux.Context) (err error) {
 			}
 			return
 		}
+
 		return errors.New("Request body can't be empty")
 	}
 	ctype := c.Req.Header.Get(HeaderContentType)

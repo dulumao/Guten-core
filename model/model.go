@@ -236,10 +236,12 @@ func (m *Model) Update(model interface{}, attrs ...interface{}) error {
 	return m.DB().Model(model).Update(attrs...).Error
 }
 
+// 如果model 主键未设置，会全部更新
 func (m *Model) Updates(model interface{}, attrs interface{}, ignoreProtectedAttrs ...bool) error {
 	return m.DB().Model(model).Updates(attrs, ignoreProtectedAttrs...).Error
 }
 
+// 如果model 主键未设置，会全部删除
 func (m *Model) Delete(model interface{}, where ...interface{}) error {
 	return m.DB().Model(model).Delete(model, where...).Error
 }
