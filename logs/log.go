@@ -1,8 +1,8 @@
 package logs
 
 import (
-	"blockchain-transaction/framework/helpers/env"
 	"fmt"
+	"github.com/dulumao/Guten-core/env"
 	"log"
 	"os"
 	"path/filepath"
@@ -22,7 +22,7 @@ func New() error {
 	mu.Lock()
 	defer mu.Unlock()
 
-	if err := Mkdir(env.Value.App.LogDir); err != nil {
+	if err := Mkdir(env.Value.Server.LogDir); err != nil {
 		fmt.Printf("mkdir error %s\n", err)
 		return err
 	}
@@ -31,14 +31,14 @@ func New() error {
 		fd.Close()
 	}
 
-	fileName := fmt.Sprintf("%s_%s.log", env.Value.App.LogDir+string(os.PathSeparator)+filepath.Base(os.Args[0]), time.Now().Format("20060102"))
+	fileName := fmt.Sprintf("%s_%s.log", env.Value.Server.LogDir+string(os.PathSeparator)+filepath.Base(os.Args[0]), time.Now().Format("20060102"))
 	fd, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Printf("create file error %s\n", err)
 		return err
 	}
 
-	if env.Value.App.Debug {
+	if env.Value.Server.Debug {
 		logHandle = log.New(os.Stdout, "", log.LstdFlags)
 	} else {
 		// logHandle = log.New(fd, "", log.Ltime|log.Lshortfile)
