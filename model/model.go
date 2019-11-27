@@ -105,6 +105,14 @@ func (m *Model) Save(value interface{}) error {
 	return m.DB().Save(value).Error
 }
 
+func (m *Model) Raw(sql string, values ...interface{}) *gorm.DB {
+	return m.DB().Raw(sql, values...)
+}
+
+func (m *Model) Exec(sql string, values ...interface{}) *gorm.DB {
+	return m.DB().Exec(sql, values...)
+}
+
 func (m *Model) Exists(model interface{}, id interface{}, fields ...string) bool {
 	var scopes Scopes
 	var itemCount = 0
